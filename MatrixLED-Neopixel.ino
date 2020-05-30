@@ -35,8 +35,7 @@ const int delayFlash = 400;
 
 int i;
 int currentColor;
-int contador;
-int acumulador;
+int currentBrightness;
 
 void setup()
 {
@@ -86,95 +85,82 @@ void loop() {
   int debouncerState10 = debouncerPin10.read();
   int debouncerState11 = debouncerPin11.read();
   
-  //BRIGHTNESS SELECTOR BY PIN
   if (digitalRead(brightnessPin[0]) == LOW)
   {
-    if (contador <= 0)
-    {
-      contador = (sizeBrightnessIntensity - 1);
-      pixels.setBrightness(brightnessIntensity[contador]);
-      delay(delayBrightness);
-    }
-    else
-    {
-      contador--;
-      pixels.setBrightness(brightnessIntensity[contador]);
-      delay(delayBrightness);
-    }
+    BrightnessDown();
   }
 
   if (digitalRead(brightnessPin[1]) == LOW)
   {
-    if (contador + 1 < sizeBrightnessIntensity)
-    {
-      contador++;
-      pixels.setBrightness(brightnessIntensity[contador]);
-      delay(delayBrightness);
-    }
-    else
-    {
-      contador = 0;
-      pixels.setBrightness(brightnessIntensity[contador]);
-      delay(delayBrightness);
-    }
+    BrightnessUp();
   }
 
-  //COLOR SELECTOR BY PIN
-  if (digitalRead(colorPin[0]) == LOW)
-  {
-    acumulador = pow(2, 0);
-    currentColor += acumulador;
-    acumulador = 0;
-  }
-
-  if (digitalRead(colorPin[1]) == LOW)
-  {
-    acumulador = pow(2, 1);
-    currentColor += acumulador;
-    acumulador = 0;
-  }
-
-  if (digitalRead(colorPin[2]) == LOW)
-  {
-    acumulador = pow(2, 2);
-    currentColor += acumulador;
-    acumulador = 0;
-  }
-
-  if (digitalRead(colorPin[3]) == LOW)
-  {
-    acumulador = pow(2, 3);
-    currentColor += acumulador;
-    acumulador = 0;
-  }
+  SelectPixelColor();
 
   if (currentColor < rowsRGBColorLeds)
   {
-    for (i = 0; i < NUMPIXELS; i++)
-    {
-     pixels.setPixelColor(i, RGBColorLeds[currentColor][0], RGBColorLeds[currentColor][1], RGBColorLeds[currentColor][2]);
-     pixels.show();
-    }
+    TurnOnPixel();
   }
   else
   {
-    currentColor -= rowsRGBColorLeds;
-    currentColor = flashColor[currentColor];
+    FlashPixel();
+  }
 
-    for (i = 0; i < NUMPIXELS; i++)
+  currentColor = 0;
+}
+
+void SelectPixelColor()
+{
+  for (i = 0; i < sizeColorPin; i++)
+  {
+    if (digitalRead(colorPin[i]) == LOW)
+    {
+      currentColor += bit(i);
+    }
+  }
+}
+
+void TurnOnPixel()
+{
+  for (i = 0; i < NUMPIXELS; i++)
     {
       pixels.setPixelColor(i, RGBColorLeds[currentColor][0], RGBColorLeds[currentColor][1], RGBColorLeds[currentColor][2]);
     }
 
     pixels.show();
-    
-    delay(delayFlash);
+}
 
-    pixels.clear();
-    pixels.show();
+void FlashPixel()
+{
+  currentColor -= rowsRGBColorLeds;
+  currentColor = flashColor[currentColor];
 
-    delay(delayFlash);
-  }
+  TurnOnPixel();
 
-  currentColor = 0;
+  delay(delayFlash);
+
+  pixels.clear();
+  pixels.show();
+
+  delay(delayFlash);
+}
+
+void BrightnessUp()
+{
+  currentBrightness = currentBrightness + 1 < sizeBrightnessIntensity ? currentBrightness + 1 : 0;
+
+  SetBrightness();
+}
+
+void BrightnessDown()
+{
+  currentBrightness = currentBrightness <= 0 ? (sizeBrightnessIntensity - 1) : currentBrightness - 1;
+
+  SetBrightness();
+}
+
+void SetBrightness()
+{
+  pixels.setBrightness(brightnessIntensity[currentBrightness]);
+  delay(delayBrightness);
 }
